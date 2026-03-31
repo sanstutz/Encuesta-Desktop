@@ -1,0 +1,69 @@
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribución / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Logs
+*.log
+
+# =========================
+# Entornos virtuales (venv)
+# =========================
+venv/
+.env/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# =========================
+# VS Code
+# =========================
+.vscode/
+*.code-workspace
+
+# =========================
+# Archivos del sistema
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Configuración local / secretos
+# =========================
+.env
+.env.*
+*.sqlite3
+*.db
+
+# =========================
+# Archivos temporales
+# =========================
+*.tmp
+*.swp
+*~
+
+# =========================
+# PyInstaller (si usás)
+# =========================
+*.spec
