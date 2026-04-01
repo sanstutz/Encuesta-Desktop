@@ -1,13 +1,10 @@
 from PyQt6.QtCore import Qt, QDate
 from PyQt6.QtWidgets import QMainWindow, QVBoxLayout, QLabel, QLineEdit, QDateEdit, QPushButton, QWidget
-from services.servicio_encuestas import ServicioEncuestas
-from ui.error_dialog import ErrorDialog
 
 class VentanaCrearEncuesta(QMainWindow):
-    def __init__(self, main_window, servicio_encuestas: ServicioEncuestas):
+    def __init__(self, main_window):
         super().__init__()
         self.main_window = main_window
-        self.servicio_encuestas = servicio_encuestas
 
         self.setWindowTitle("Nueva Encuesta")
         self.setMinimumSize(400, 200)
@@ -49,16 +46,7 @@ class VentanaCrearEncuesta(QMainWindow):
         nombre = self.input_nombre.text()
         fecha_inicio = self.input_fecha_inicio.date().toPyDate()
         fecha_fin = self.input_fecha_fin.date().toPyDate()
-        try:
-            encuesta = self.servicio_encuestas.crear_encuesta(nombre, fecha_inicio, fecha_fin)
-            self.main_window.finalizar_crear_encuesta(encuesta)
-        except Exception as e:
-            error_dialog = ErrorDialog(f"Error al crear la encuesta: {str(e)}")
-            error_dialog.exec()
-            self.main_window.finalizar_crear_encuesta(None)
+        self.main_window.finalizar_crear_encuesta(nombre, fecha_inicio, fecha_fin)
 
-    def closeEvent(self, event):
-        self.main_window.finalizar_crear_encuesta(None)
-        event.accept()
 
     
