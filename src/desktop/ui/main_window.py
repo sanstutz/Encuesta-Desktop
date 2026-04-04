@@ -1,7 +1,7 @@
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton, QHBoxLayout, QWidget
 from ui.ventana_crear_encuesta import VentanaCrearEncuesta
-from ui.ventana_encuesta import VentanaEncuesta
+from ui.ventana_encuesta.ventana_encuesta import VentanaEncuesta
 from ui.ventana_cargar_encuesta import VentanaAbrirEncuesta
 from ui.error_dialog import ErrorDialog
 

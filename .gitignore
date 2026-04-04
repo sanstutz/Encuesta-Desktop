@@ -55,6 +55,8 @@ Thumbs.db
 .env.*
 *.sqlite3
 *.db
+credentials.json
+token.json
 
 # =========================
 # Archivos temporales

@@ -11,6 +11,7 @@ class ConfirmacionDialog(QDialog):
 
         layout = QVBoxLayout()
         label_mensaje = QLabel(mensaje)
+        label_mensaje.setWordWrap(True)
         layout.addWidget(label_mensaje)
 
         layout_botones = QHBoxLayout()

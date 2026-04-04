@@ -1,30 +1,31 @@
-from PyQt6.QtCore import QModelIndex, Qt, QAbstractTableModel
-from PyQt6.QtWidgets import QHeaderView, QMainWindow, QTableView, QVBoxLayout, QPushButton, QWidget, QGridLayout
-from ui.error_dialog import ErrorDialog
+from PyQt6.QtCore import Qt, QAbstractTableModel
+from PyQt6.QtWidgets import QHeaderView, QTableView, QVBoxLayout, QPushButton, QGridLayout, QLabel
 from ui.confirmacion_dialog import ConfirmacionDialog
-from ui.ventana_ce_materia import VentanaCrearEditarMateria
-from services.servicio_materias import ServicioMaterias
+from ui.ventana_encuesta.ventana_ce_materia import VentanaCrearEditarMateria
+from entities.materia import Materia
+from entities.especialidad import Especialidad
 
-class VentanaMaterias(QMainWindow):
-    def __init__(self, servicio_materias: ServicioMaterias, id_encuesta: int):
+class LayoutMaterias(QVBoxLayout):
+    def __init__(self, ventana_encuesta, materias: list[Materia], especialidades: list[Especialidad]):
         super().__init__()
-        self.servicio_materias = servicio_materias
-        self.id_encuesta = id_encuesta
         
-        self.ventana_ce_materia = None
-        
-        self.setWindowTitle("Materias")
-        self.setMinimumSize(800, 600)
+        self.ventana_ce_materia: VentanaCrearEditarMateria = None
+        self.ventana_encuesta = ventana_encuesta
 
-        layout = QVBoxLayout()
+        self.especialidades = especialidades
+
+        self.setSpacing(5)
+
+        label = QLabel("Materias:")
+        self.addWidget(label)
 
         self.tabla_materias = QTableView()
-        self.materias_model = self.cargar_modelo_materias()
+        self.materias_model = MateriasModel(materias, especialidades)
         self.tabla_materias.setModel(self.materias_model)
         self.tabla_materias.setSelectionMode(QTableView.SelectionMode.SingleSelection)
         self.tabla_materias.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
         self.tabla_materias.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        layout.addWidget(self.tabla_materias)
+        self.addWidget(self.tabla_materias)
 
         layout_botones = QGridLayout()
         layout_botones.setVerticalSpacing(0)
@@ -50,21 +51,14 @@ class VentanaMaterias(QMainWindow):
         boton_mover_abajo.clicked.connect(lambda: self.mover_materia(1))
         layout_botones.addWidget(boton_mover_abajo, 1, 2)
 
-        layout.addLayout(layout_botones)
+        self.addLayout(layout_botones)
 
-        container = QWidget()
-        container.setLayout(layout)
-        self.setCentralWidget(container)
+    def actualizar_materias(self, materias: list[Materia]):
+        self.materias_model.actualizar_materias(materias)
 
-    def cargar_modelo_materias(self):
-        try:
-            materias = self.servicio_materias.obtener_materias_de_encuesta(self.id_encuesta)
-            model = MateriasModel(materias)
-            return model
-        except Exception as e:
-            error_dialog = ErrorDialog(f"Error al cargar las materias: {str(e)}")
-            error_dialog.exec()
-            return MateriasModel([])
+    def actualizar_especialidades(self, especialidades: list[Especialidad]):
+        self.especialidades = especialidades
+        self.materias_model.actualizar_especialidades(especialidades)
         
     def agregar_materia_pressed(self):
         if (self.ventana_ce_materia is None):
@@ -72,21 +66,16 @@ class VentanaMaterias(QMainWindow):
                 orden = self.tabla_materias.selectionModel().selectedRows()[0].row() + 1 # +1 para agregar después de la seleccionada
             else:
                 orden = -1
-            self.ventana_ce_materia = VentanaCrearEditarMateria(self, True, orden)
+            self.ventana_ce_materia = VentanaCrearEditarMateria(self, self.especialidades, True, orden)
             self.ventana_ce_materia.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
             self.ventana_ce_materia.destroyed.connect(self.limpiar_ventana_ce_materia)
             self.ventana_ce_materia.show()
 
     def editar_materia_pressed(self):
         if (self.ventana_ce_materia is None and self.tabla_materias.selectionModel().hasSelection()):
-            index = self.tabla_materias.selectionModel().selectedRows()[0]
-            try:
-                materia = self.servicio_materias.obtener_materias_de_encuesta(self.id_encuesta)[index.row()]
-            except Exception as e:
-                error_dialog = ErrorDialog(f"Error al obtener la materia: {str(e)}")
-                error_dialog.exec()
-                return
-            self.ventana_ce_materia = VentanaCrearEditarMateria(self, False, index.row(), materia.codigo, materia.nombre, materia.tipo, materia.nombre_corto, materia.nombre_sin_espacios, materia.año)
+            index = self.tabla_materias.selectionModel().selectedRows()[0].row()
+            materia = self.materias_model.materias[index]
+            self.ventana_ce_materia = VentanaCrearEditarMateria(self, self.especialidades, False, index, materia.codigo, materia.nombre, materia.tipo, materia.especialidades, materia.año, materia.nombre_corto, materia.nombre_sin_espacios)
             self.ventana_ce_materia.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
             self.ventana_ce_materia.destroyed.connect(self.limpiar_ventana_ce_materia)
             self.ventana_ce_materia.show()
@@ -100,27 +89,15 @@ class VentanaMaterias(QMainWindow):
     def limpiar_ventana_ce_materia(self):
         self.ventana_ce_materia = None
 
-    def agregar_materia(self, codigo: str, nombre: str, tipo: str, nombre_corto: str, nombre_sin_espacios: str, año: int, orden: int):
-        try:
-            materia = self.servicio_materias.crear_materia(self.id_encuesta, codigo, nombre, tipo, nombre_corto, nombre_sin_espacios, año, orden)
-            self.materias_model.actualizar_materias(
-                self.servicio_materias.obtener_materias_de_encuesta(self.id_encuesta)
-            )
+    def agregar_materia(self, codigo: str, nombre: str, tipo: str, especialidades: list[int], año: int, nombre_corto: str, nombre_sin_espacios: str, orden: int):
+        resultado = self.ventana_encuesta.agregar_materia(codigo, nombre, tipo, especialidades, año, nombre_corto, nombre_sin_espacios, orden)
+        if resultado:
             self.ventana_ce_materia.close()
-        except Exception as e:
-            error_dialog = ErrorDialog(f"Error al agregar la materia: {str(e)}")
-            error_dialog.exec()
 
-    def editar_materia(self, id_materia: int, codigo: str, nombre: str, tipo: str, nombre_corto: str, nombre_sin_espacios: str, año: int):
-        try:
-            self.servicio_materias.editar_materia(self.id_encuesta, id_materia, codigo, nombre, tipo, nombre_corto, nombre_sin_espacios, año)
-            self.materias_model.actualizar_materias(
-                self.servicio_materias.obtener_materias_de_encuesta(self.id_encuesta)
-            )
+    def editar_materia(self, id_materia: int, codigo: str, nombre: str, tipo: str, especialidades: list[int], año: int, nombre_corto: str, nombre_sin_espacios: str):
+        resultado = self.ventana_encuesta.editar_materia(id_materia, codigo, nombre, tipo, especialidades, año, nombre_corto, nombre_sin_espacios)
+        if resultado:
             self.ventana_ce_materia.close()
-        except Exception as e:
-            error_dialog = ErrorDialog(f"Error al editar la materia: {str(e)}")
-            error_dialog.exec()
 
     def mover_materia(self, direccion: int):
         if not self.tabla_materias.selectionModel().hasSelection():
@@ -129,30 +106,18 @@ class VentanaMaterias(QMainWindow):
         nuevo_index = index + direccion
         if nuevo_index < 0 or nuevo_index >= self.materias_model.rowCount():
             return
-        try:
-            self.servicio_materias.intercambiar_materias(self.id_encuesta, index, nuevo_index)
-            self.materias_model.actualizar_materias(
-                self.servicio_materias.obtener_materias_de_encuesta(self.id_encuesta)
-            )
+        resultado = self.ventana_encuesta.mover_materia(index, nuevo_index)
+        if resultado:
             self.tabla_materias.selectRow(nuevo_index)
-        except Exception as e:
-            error_dialog = ErrorDialog(f"Error al mover la materia: {str(e)}")
-            error_dialog.exec()
 
     def eliminar_materia(self, id_materia: int):
-        try:
-            self.servicio_materias.eliminar_materia(self.id_encuesta, id_materia)
-            self.materias_model.actualizar_materias(
-                self.servicio_materias.obtener_materias_de_encuesta(self.id_encuesta)
-            )
-        except Exception as e:
-            error_dialog = ErrorDialog(f"Error al eliminar la materia: {str(e)}")
-            error_dialog.exec()
+        self.ventana_encuesta.eliminar_materia(id_materia)
 
 class MateriasModel(QAbstractTableModel):
-    def __init__(self, materias):
+    def __init__(self, materias: list[Materia], especialidades: list[Especialidad]):
         super().__init__()
-        self.materias = materias or []
+        self.materias: list[Materia] = materias or []
+        self.especialidades: list[Especialidad] = especialidades or []
 
     def data(self, index, role = ...):
         if role == Qt.ItemDataRole.DisplayRole:
@@ -164,9 +129,11 @@ class MateriasModel(QAbstractTableModel):
             elif index.column() == 2:
                 return materia.tipo_str()
             elif index.column() == 3:
-                return materia.nombre_corto
+                return ", ".join([self.encontrar_especialidad(id).nombre for id in materia.especialidades])
             elif index.column() == 4:
                 return str(materia.año)
+            elif index.column() == 5:
+                return materia.nombre_corto
         return None
     
     def headerData(self, section, orientation, role = ...):
@@ -178,18 +145,30 @@ class MateriasModel(QAbstractTableModel):
             elif section == 2:
                 return "Tipo"
             elif section == 3:
-                return "Nombre corto"
+                return "Especialidad"
             elif section == 4:
                 return "Año"
+            elif section == 5:
+                return "Nombre corto"
         return None
 
     def rowCount(self, parent = ...):
         return len(self.materias)
     
     def columnCount(self, parent = ...):
-        return 5
+        return 6
 
     def actualizar_materias(self, materias):
         self.beginResetModel()
         self.materias = materias or []
         self.endResetModel()
+
+    def actualizar_especialidades(self, especialidades):
+        self.especialidades = especialidades or []
+        self.layoutChanged.emit()
+
+    def encontrar_especialidad(self, id_especialidad):
+        for especialidad in self.especialidades:
+            if especialidad.id_especialidad == id_especialidad:
+                return especialidad
+        return None

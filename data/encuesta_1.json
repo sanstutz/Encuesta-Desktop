@@ -1,0 +1,84 @@
+{
+  "id": 1,
+  "nombre": "Encuesta 2026",
+  "fecha_inicio": "2025-08-01",
+  "fecha_fin": "2026-12-01",
+  "materias": [
+    {
+      "codigo": "FG1",
+      "nombre": "Física General I",
+      "tipo": 0,
+      "nombre_corto": "Fis. Gral. I",
+      "nombre_sin_espacios": "Fis._Gral._I",
+      "año": 1,
+      "especialidades": [
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "codigo": "AN1",
+      "nombre": "Análisis Matemático I T",
+      "tipo": 1,
+      "nombre_corto": "An. Mat. I T",
+      "nombre_sin_espacios": "An._Mat._I",
+      "año": 1,
+      "especialidades": [
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "codigo": "AN1",
+      "nombre": "Análisis Matemático I P",
+      "tipo": 2,
+      "nombre_corto": "An. Mat. I P",
+      "nombre_sin_espacios": "An._Mat._I_P",
+      "año": 1,
+      "especialidades": [
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "codigo": "FE1",
+      "nombre": "Física Experimental I P",
+      "tipo": 2,
+      "nombre_corto": "Fis. Exp. I P",
+      "nombre_sin_espacios": "Fis._Exp._I",
+      "año": 2,
+      "especialidades": [
+        2
+      ]
+    },
+    {
+      "codigo": "ABC",
+      "nombre": "Física Experimental III",
+      "tipo": 0,
+      "nombre_corto": "Fis. Exp. III",
+      "nombre_sin_espacios": "Fis._Exp._III",
+      "año": 3,
+      "especialidades": [
+        2
+      ]
+    }
+  ],
+  "especialidades": [
+    {
+      "id_especialidad": 1,
+      "nombre": "Licenciatura en Matemática"
+    },
+    {
+      "id_especialidad": 2,
+      "nombre": "Licenciatura en Física"
+    },
+    {
+      "id_especialidad": 3,
+      "nombre": "Licenciatura en Ciencias de la Computación"
+    }
+  ],
+  "form_url": "https://docs.google.com/forms/d/e/1FAIpQLSeIyfLdq2U8Lw36lrsQPAzWZcKQq5GPiN037Hq_3EMhfFKY9g/viewform"
+}
