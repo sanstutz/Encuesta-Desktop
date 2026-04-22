@@ -14,6 +14,9 @@ class LayoutMaterias(QVBoxLayout):
 
         self.especialidades = especialidades
 
+        self.bloqueado = False
+        self.botones: list[QPushButton] = []
+
         self.setSpacing(5)
 
         label = QLabel("Materias:")
@@ -34,15 +37,17 @@ class LayoutMaterias(QVBoxLayout):
         boton_agregar = QPushButton("Agregar materia")
         boton_agregar.clicked.connect(self.agregar_materia_pressed)
         layout_botones.addWidget(boton_agregar, 0, 0)
+        self.botones.append(boton_agregar)
 
         boton_eliminar = QPushButton("Eliminar materia")
         boton_eliminar.clicked.connect(self.eliminar_materia_pressed)
         layout_botones.addWidget(boton_eliminar, 1, 0)
+        self.botones.append(boton_eliminar)
 
         boton_editar = QPushButton("Editar materia")
         boton_editar.clicked.connect(self.editar_materia_pressed)
         layout_botones.addWidget(boton_editar, 0, 1)
-
+        self.botones.append(boton_editar)
 
         boton_mover_arriba = QPushButton("↑")
         boton_mover_arriba.clicked.connect(lambda: self.mover_materia(-1))
@@ -50,8 +55,15 @@ class LayoutMaterias(QVBoxLayout):
         boton_mover_abajo = QPushButton("↓")
         boton_mover_abajo.clicked.connect(lambda: self.mover_materia(1))
         layout_botones.addWidget(boton_mover_abajo, 1, 2)
+        self.botones.append(boton_mover_arriba)
+        self.botones.append(boton_mover_abajo)
 
         self.addLayout(layout_botones)
+
+    def bloquear_edicion(self, bloquear: bool):
+        self.bloqueado = bloquear
+        for boton in self.botones:
+            boton.setEnabled(not bloquear)
 
     def actualizar_materias(self, materias: list[Materia]):
         self.materias_model.actualizar_materias(materias)
@@ -61,7 +73,7 @@ class LayoutMaterias(QVBoxLayout):
         self.materias_model.actualizar_especialidades(especialidades)
         
     def agregar_materia_pressed(self):
-        if (self.ventana_ce_materia is None):
+        if (self.ventana_ce_materia is None and not self.bloqueado):
             if self.tabla_materias.selectionModel().hasSelection():
                 orden = self.tabla_materias.selectionModel().selectedRows()[0].row() + 1 # +1 para agregar después de la seleccionada
             else:
@@ -72,7 +84,7 @@ class LayoutMaterias(QVBoxLayout):
             self.ventana_ce_materia.show()
 
     def editar_materia_pressed(self):
-        if (self.ventana_ce_materia is None and self.tabla_materias.selectionModel().hasSelection()):
+        if (self.ventana_ce_materia is None and self.tabla_materias.selectionModel().hasSelection() and not self.bloqueado):
             index = self.tabla_materias.selectionModel().selectedRows()[0].row()
             materia = self.materias_model.materias[index]
             self.ventana_ce_materia = VentanaCrearEditarMateria(self, self.especialidades, False, index, materia.codigo, materia.nombre, materia.tipo, materia.especialidades, materia.año, materia.nombre_corto, materia.nombre_sin_espacios)
@@ -81,7 +93,7 @@ class LayoutMaterias(QVBoxLayout):
             self.ventana_ce_materia.show()
 
     def eliminar_materia_pressed(self):
-        if self.tabla_materias.selectionModel().hasSelection():
+        if self.tabla_materias.selectionModel().hasSelection() and self.ventana_ce_materia is None and not self.bloqueado:
             index = self.tabla_materias.selectionModel().selectedRows()[0].row()
             confirmacion_dialog = ConfirmacionDialog("Confirmar eliminación", "¿Estás seguro de que quieres eliminar esta materia?", lambda: self.eliminar_materia(index))
             confirmacion_dialog.exec()
@@ -100,7 +112,7 @@ class LayoutMaterias(QVBoxLayout):
             self.ventana_ce_materia.close()
 
     def mover_materia(self, direccion: int):
-        if not self.tabla_materias.selectionModel().hasSelection():
+        if not self.tabla_materias.selectionModel().hasSelection() or self.ventana_ce_materia is not None or self.bloqueado:
             return
         index = self.tabla_materias.selectionModel().selectedRows()[0].row()
         nuevo_index = index + direccion

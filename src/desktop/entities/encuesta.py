@@ -50,16 +50,14 @@ class Encuesta:
                 return especialidad
         raise ValueError("No se encontró la especialidad con el ID proporcionado")
 
-    def eliminar_especialidad(self, id_especialidad):
+    def eliminar_especialidad(self, id_especialidad: int):
         for especialidad in self.especialidades:
             if especialidad.id_especialidad == id_especialidad:
                 self.especialidades.remove(especialidad)
                 return
-
-    def obtener_ultimo_año(self) -> int:
-        if not self.materias:
-            return 0
-        return max(materia.año for materia in self.materias)
+    
+    def tenes_url(self) -> bool:
+        return self.form_url is not None and self.form_url != ""
 
     def __str__(self):
         return f"Encuesta(id={self.id}, nombre='{self.nombre}', fecha_inicio={self.fecha_inicio}, fecha_fin={self.fecha_fin}, form_url={self.form_url})"
@@ -78,6 +76,7 @@ class Encuesta:
                 {
                     "id_especialidad": especialidad.id_especialidad,
                     "nombre": especialidad.nombre,
+                    "años": especialidad.años
                 }
                 for especialidad in self.especialidades
             ],
@@ -94,5 +93,5 @@ class Encuesta:
         )
         encuesta.form_url = data.get("form_url")
         encuesta.materias = [Materia.from_dict(materia_data) for materia_data in data.get("materias", [])]
-        encuesta.especialidades = [Especialidad(especialidad_data["id_especialidad"], especialidad_data["nombre"]) for especialidad_data in data.get("especialidades", [])]
+        encuesta.especialidades = [Especialidad(especialidad_data["id_especialidad"], especialidad_data["nombre"], especialidad_data["años"]) for especialidad_data in data.get("especialidades", [])]
         return encuesta

@@ -25,6 +25,8 @@ var/
 # Logs
 *.log
 
+data/
+
 # =========================
 # Entornos virtuales (venv)
 # =========================

@@ -3,14 +3,13 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 import os
-import random
 
 from entities.encuesta import Encuesta
 from entities.materia import Materia
 from entities.especialidad import Especialidad
 
-SCOPES = ["https://www.googleapis.com/auth/drive"]
-DISCOVERY_DOC = "https://forms.googleapis.com/$discovery/rest?version=v1"
+SCOPES = ["https://www.googleapis.com/auth/script.projects", "https://www.googleapis.com/auth/drive", "https://www.googleapis.com/auth/forms", "https://www.googleapis.com/auth/spreadsheets"]
+# DISCOVERY_DOC = "https://forms.googleapis.com/$discovery/rest?version=v1"
 TOKEN_FILE = "token.json"
 CREDENTIALS_FILE = "credentials.json"
 
@@ -32,10 +31,27 @@ class ServicioFormulario:
 
     def __init__(self):
         self.creds = self.obtener_credenciales()
-        self.service = build("forms", "v1", credentials=self.creds, discoveryServiceUrl=DISCOVERY_DOC, static_discovery=False)
+        # self.service = build("forms", "v1", credentials=self.creds, discoveryServiceUrl=DISCOVERY_DOC, static_discovery=False)
+        self.form_service = build("script", "v1", credentials=self.creds)
         self.formId = None
 
-    def crear_json_formulario(self, encuesta: Encuesta, descripcion: str):
+    def generar_formulario(self, encuesta: Encuesta, descripcion: str) -> str:
+        request = {
+            "function": "crearForm",
+            "parameters": [encuesta.to_dict(), descripcion],
+            "devMode": False
+        }
+
+        script_id = os.getenv("SCRIPT_ID")
+        respuesta = self.form_service.scripts().run(body=request, scriptId=script_id).execute()
+        if "error" in respuesta:
+            error = respuesta["error"]["details"][0]
+            raise Exception(f"Error al generar formulario: {error['errorMessage']}")
+        else:
+            return respuesta["response"]["result"]["url"]
+
+"""
+    def generar_formulario(self, encuesta: Encuesta, descripcion: str) -> str:
         # crear formulario
         form = {
             "info": {
@@ -109,10 +125,12 @@ class ServicioFormulario:
         indice_selector = self.proxima_posicion - len(encuesta.especialidades) + 1
 
         for especialidad in encuesta.especialidades:
-            secciones_año = list()
+            secciones_por_año = list()
             titulos_secciones_año = list()
-            for año in range(1, encuesta.obtener_ultimo_año() + 1):
+            valores_opcion = list()
+            for año in range(1, especialidad.años + 1):
                 titulo = f"Materias de {año}º año de {especialidad.nombre}"
+                valores_opcion.append(f"{año}º año")
                 seccion = {
                     "createItem": {
                         "item": {
@@ -125,15 +143,21 @@ class ServicioFormulario:
                     }
                 }
                 preguntas = self.crear_preguntas_por_especialidad_y_año(encuesta.materias, especialidad, año)
-                secciones_año.append(seccion)
-                secciones_año.extend(preguntas)
+                secciones_por_año.append(seccion)
+                secciones_por_año.extend(preguntas)
                 titulos_secciones_año.append(titulo)
-            self.crear_secciones_con_dropdown(secciones_año, titulos_secciones_año, indice_selector, f"Seleccione su año de cursado para {especialidad.nombre}")
+            self.crear_secciones_con_dropdown(
+                secciones_por_año,
+                titulos_secciones_año,
+                indice_selector,
+                f"Seleccione su año de cursado para {especialidad.nombre}",
+                valores_opcion=valores_opcion,
+            )
             indice_selector += 2 # tiene que aumentar 1 por la seccion y otro por el selector
         return formulario["responderUri"]
 
 
-    def crear_secciones_con_dropdown(self, secciones: list, titulos_secciones: list[str], posicion_dropdown: int, titulo: str, descripcion: str = ""):
+    def crear_secciones_con_dropdown(self, secciones: list, titulos_secciones: list[str], posicion_dropdown: int, titulo: str, descripcion: str = "", valores_opcion: list[str] = None):
         posicion_actual = self.obtener_proxima_posicion()
 
         resp_secciones = self.service.forms().batchUpdate(formId=self.formId, body={"requests": secciones}).execute()
@@ -156,7 +180,7 @@ class ServicioFormulario:
                                     "choiceQuestion": {
                                         "type": "DROP_DOWN",
                                         "options": [{
-                                            "value": titulos_secciones[i],
+                                            "value": valores_opcion[i] if valores_opcion else titulos_secciones[i],
                                             "goToSectionId": id_secciones[i]
                                         } for i in range(len(id_secciones))],
                                     }
@@ -216,4 +240,4 @@ class ServicioFormulario:
         pos = self.proxima_posicion
         self.proxima_posicion += 1
         return pos
-    
+    """

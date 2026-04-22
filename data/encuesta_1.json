@@ -69,16 +69,19 @@
   "especialidades": [
     {
       "id_especialidad": 1,
-      "nombre": "Licenciatura en Matemática"
+      "nombre": "Licenciatura en Matemática",
+      "años": 5
     },
     {
       "id_especialidad": 2,
-      "nombre": "Licenciatura en Física"
+      "nombre": "Licenciatura en Física",
+      "años": 5
     },
     {
       "id_especialidad": 3,
-      "nombre": "Licenciatura en Ciencias de la Computación"
+      "nombre": "Licenciatura en Ciencias de la Computación",
+      "años": 4
     }
   ],
-  "form_url": "https://docs.google.com/forms/d/e/1FAIpQLSeIyfLdq2U8Lw36lrsQPAzWZcKQq5GPiN037Hq_3EMhfFKY9g/viewform"
+  "form_url": "https://docs.google.com/forms/d/e/1FAIpQLScT8o11is_Wetmj_F7_10ZH4Q1A_Fs1szD08H06MGDSnXKkuw/viewform"
 }

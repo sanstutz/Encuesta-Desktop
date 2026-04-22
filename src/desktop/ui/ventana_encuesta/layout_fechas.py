@@ -13,6 +13,9 @@ class LayoutFechas(QVBoxLayout):
         self.fecha_inicio = encuesta.fecha_inicio
         self.fecha_fin = encuesta.fecha_fin
 
+        self.bloqueado = False
+        self.botones: list[QPushButton] = []
+
         # fecha inicio
         layout_fecha_inicio = QHBoxLayout()
         label_fecha_inicio = QLabel("Fecha de inicio:")
@@ -49,6 +52,7 @@ class LayoutFechas(QVBoxLayout):
         layout_editar = QHBoxLayout()
         layout_editar.setContentsMargins(0, 0, 0, 0)
         self.boton_editar = QPushButton("Editar")
+        self.botones.append(self.boton_editar)
         layout_editar.addWidget(self.boton_editar)
         contenedor_editar.setLayout(layout_editar)
         self.layout_botones.addWidget(contenedor_editar)
@@ -68,7 +72,17 @@ class LayoutFechas(QVBoxLayout):
 
         self.addWidget(contenedor_botones)
 
+    def bloquear_edicion(self, bloquear: bool):
+        self.bloqueado = bloquear
+        for boton in self.botones:
+            boton.setEnabled(not bloquear)
+        if bloquear:
+            self.deshabilitar_edicion()
+        
+
     def habilitar_edicion(self):
+        if (self.bloqueado):
+            return
         self.input_fecha_inicio.setReadOnly(False)
         self.input_fecha_fin.setReadOnly(False)
         self.input_fecha_inicio.setFocusPolicy(Qt.FocusPolicy.StrongFocus)

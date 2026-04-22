@@ -4,12 +4,14 @@ from services.servicio_formulario import ServicioFormulario
 from repositories.repositorio_encuestas import RepositorioEncuestas
 from ui.main_window import launch as launch_main_window
 from pathlib import Path
+from dotenv import load_dotenv
 
 from entities.encuesta import Encuesta
 from datetime import date
 
 
 def main():
+    load_dotenv()
     # base_dir = Path(__file__).resolve().parent
     # save_path = base_dir / "data"
 

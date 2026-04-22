@@ -10,7 +10,7 @@ class ServicioMaterias:
         encuesta = self.servicio_encuestas.obtener_encuesta(id_encuesta)
         return encuesta.materias
     
-    def crear_materia(self, id_encuesta: int, codigo: str, nombre: str, tipo: str, especialidades: list[int], año: int, nombre_corto: str, nombre_sin_espacios: str, orden: int = -1):
+    def crear_materia(self, id_encuesta: int, codigo: str, nombre: str, tipo: str, id_especialidades: list[int], año: int, nombre_corto: str, nombre_sin_espacios: str, orden: int = -1):
         if (año < 1):
             raise ValueError("El año debe ser mayor a 0")
         
@@ -27,14 +27,21 @@ class ServicioMaterias:
             if (materia.codigo == codigo and (materia.tipo == tipo_int or materia.tipo == 0 or tipo_int == 0)):
                 raise ValueError("Ya existe una materia con ese código del mismo tipo en la encuesta")
         
-        especialidades__encuesta = self.servicio_encuestas.obtener_especialidades(id_encuesta)
-        if len(especialidades__encuesta) > 0 and len(especialidades) == 0:
+        especialidades_encuesta = self.servicio_encuestas.obtener_especialidades(id_encuesta)
+        if len(especialidades_encuesta) > 0 and len(id_especialidades) == 0:
             raise ValueError("Debe seleccionar al menos una especialidad para la materia")
-        for especialidad in especialidades:
-            if especialidad not in [e.id_especialidad for e in especialidades__encuesta]:
-                raise ValueError("Especialidad con id " + str(especialidad) + " no existe en la encuesta")
+        for id_esp in id_especialidades:
+            especialidad = None
+            for e in especialidades_encuesta:
+                if e.id_especialidad == id_esp:
+                    especialidad = e
+                    break
+            if not especialidad:
+                raise ValueError("Especialidad con id " + str(id_esp) + " no existe en la encuesta")
+            if año > especialidad.años:
+                raise ValueError("El año de la materia no puede ser mayor a los años de la especialidad " + especialidad.nombre)
             
-        materia = Materia(codigo, nombre, tipo_int, nombre_corto, nombre_sin_espacios, año, especialidades)
+        materia = Materia(codigo, nombre, tipo_int, nombre_corto, nombre_sin_espacios, año, id_especialidades)
         if (orden and orden >= 0 and orden <= len(encuesta.materias)):
             encuesta.añadir_materia_en_orden(materia, orden)
         else:
@@ -42,7 +49,7 @@ class ServicioMaterias:
         self.servicio_encuestas.guardar_encuesta(encuesta)
         return materia
 
-    def editar_materia(self, id_encuesta: int, id_materia: int, codigo: str, nombre: str, tipo: str, especialidades: list[int], año: int, nombre_corto: str, nombre_sin_espacios: str):
+    def editar_materia(self, id_encuesta: int, id_materia: int, codigo: str, nombre: str, tipo: str, id_especialidades: list[int], año: int, nombre_corto: str, nombre_sin_espacios: str):
         if (año < 1):
             raise ValueError("El año debe ser mayor a 0")
         
@@ -61,12 +68,19 @@ class ServicioMaterias:
             if (m.codigo == codigo and m != materia and (m.tipo == tipo_int or m.tipo == 0 or tipo_int == 0)):
                 raise ValueError("Ya existe una materia con ese código del mismo tipo en la encuesta")
             
-        especialidades__encuesta = self.servicio_encuestas.obtener_especialidades(id_encuesta)
-        if len(especialidades__encuesta) > 0 and len(especialidades) == 0:
+        especialidades_encuesta = self.servicio_encuestas.obtener_especialidades(id_encuesta)
+        if len(especialidades_encuesta) > 0 and len(id_especialidades) == 0:
             raise ValueError("Debe seleccionar al menos una especialidad para la materia")
-        for especialidad in especialidades:
-            if especialidad not in [e.id_especialidad for e in especialidades__encuesta]:
-                raise ValueError("Especialidad con id " + str(especialidad) + " no existe en la encuesta")
+        for id_esp in id_especialidades:
+            especialidad = None
+            for e in especialidades_encuesta:
+                if e.id_especialidad == id_esp:
+                    especialidad = e
+                    break
+            if not especialidad:
+                raise ValueError("Especialidad con id " + str(id_esp) + " no existe en la encuesta")
+            if año > especialidad.años:
+                raise ValueError("El año de la materia no puede ser mayor a los años de la especialidad " + especialidad.nombre)
 
         materia.codigo = codigo
         materia.nombre = nombre
@@ -74,7 +88,7 @@ class ServicioMaterias:
         materia.nombre_corto = nombre_corto
         materia.nombre_sin_espacios = nombre_sin_espacios
         materia.año = año
-        materia.especialidades = especialidades
+        materia.especialidades = id_especialidades
 
         self.servicio_encuestas.guardar_encuesta(encuesta)
 

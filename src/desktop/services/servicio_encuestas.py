@@ -2,6 +2,7 @@ from entities.encuesta import Encuesta
 from entities.especialidad import Especialidad
 from repositories.repositorio_encuestas import RepositorioEncuestas
 from datetime import date
+from services.servicio_formulario import ServicioFormulario
 
 class ServicioEncuestas:
     def __init__(self, repositorio: RepositorioEncuestas):
@@ -57,20 +58,17 @@ class ServicioEncuestas:
         encuesta.fecha_fin = fecha_fin
         self.repositorio.guardar_encuesta(encuesta)
 
-    def actualizar_form_url(self, id_encuesta: int, url: str):
-        encuesta = self.obtener_encuesta(id_encuesta)
-        encuesta.form_url = url
-        self.repositorio.guardar_encuesta(encuesta)
-
-    def crear_especialidad(self, id_encuesta: int, nombre: str):
+    def crear_especialidad(self, id_encuesta: int, nombre: str, años: int) -> Especialidad:
         encuesta = self.obtener_encuesta(id_encuesta)
         if (not nombre):
             raise ValueError("El nombre de la especialidad no puede estar vacío")
+        if (años < 1):
+            raise ValueError("El número de años debe ser mayor a 0")
         for especialidad in encuesta.especialidades:
             if (especialidad.nombre == nombre):
                 raise ValueError("Ya existe una especialidad con ese nombre en esta encuesta")
-        id_especialidad = encuesta.especialidades[len(encuesta.especialidades) - 1].id_especialidad + 1 if len(encuesta.especialidades) > 0 else 1
-        especialidad = Especialidad(id_especialidad, nombre)
+        id_especialidad = encuesta.especialidades[-1].id_especialidad + 1 if len(encuesta.especialidades) > 0 else 1
+        especialidad = Especialidad(id_especialidad, nombre, años)
         encuesta.añadir_especialidad(especialidad)
         self.repositorio.guardar_encuesta(encuesta)
         return especialidad
@@ -79,15 +77,21 @@ class ServicioEncuestas:
         encuesta = self.obtener_encuesta(id_encuesta)
         return encuesta.especialidades
 
-    def editar_especialidad(self, id_encuesta: int, id_especialidad: int, nombre: str):
+    def editar_especialidad(self, id_encuesta: int, id_especialidad: int, nombre: str, años: int):
         if (not nombre):
             raise ValueError("El nombre de la especialidad no puede estar vacío")
+        if (años < 1):
+            raise ValueError("El número de años debe ser mayor a 0")
         encuesta = self.obtener_encuesta(id_encuesta)
         for e in encuesta.especialidades:
             if (e.nombre == nombre and e.id_especialidad != id_especialidad):
                 raise ValueError("Ya existe una especialidad con ese nombre en esta encuesta")
+        for materia in encuesta.materias:
+            if id_especialidad in materia.especialidades and materia.año > años:
+                raise ValueError(f"No se puede reducir los años de la especialidad porque la materia {materia.nombre} tiene un año de cursado mayor a los años de la especialidad")
         especialidad = encuesta.obtener_especialidad_por_id(id_especialidad)
         especialidad.nombre = nombre
+        especialidad.años = años
         self.repositorio.guardar_encuesta(encuesta)
 
     def eliminar_especialidad(self, id_encuesta: int, id_especialidad: int):
@@ -96,3 +100,21 @@ class ServicioEncuestas:
         self.repositorio.guardar_encuesta(encuesta)
         for materia in encuesta.materias:
             materia.eliminar_especialidad(id_especialidad)
+
+    
+    def generar_formulario(self, id_encuesta: int) -> str:
+        encuesta = self.obtener_encuesta(id_encuesta)
+        if encuesta.form_url:
+            raise Exception("El formulario ya ha sido generado para esta encuesta")
+        servicio_formulario = ServicioFormulario()
+        url = servicio_formulario.generar_formulario(encuesta, encuesta.nombre)
+        encuesta.form_url = url
+        self.repositorio.guardar_encuesta(encuesta)
+        return url
+    
+    def dar_de_baja_formulario(self, id_encuesta: int):
+        encuesta = self.obtener_encuesta(id_encuesta)
+        if not encuesta.form_url:
+            raise Exception("El formulario no ha sido generado para esta encuesta")
+        encuesta.form_url = None
+        self.repositorio.guardar_encuesta(encuesta)
